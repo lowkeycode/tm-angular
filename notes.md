@@ -356,3 +356,97 @@ export class TaskService {
   }
 }
 ```
+
+
+Deleting:
+
+We set up our task item to have an onDelete method that takes in the taskon click
+
+task item
+```html
+<div class="task">
+  <h3>
+    {{ task.text }}
+    <fa-icon (click)="onDelete(task)" [icon]="faTimes"></fa-icon>
+  </h3>
+  <p>{{ task.day }}</p>
+</div>
+```
+
+Then we ensure we give it the output decorator defining the custom function with an event emitter. Then call that event emitter in the onDelete method
+
+task item
+```ts
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Task } from '../../Task';
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
+
+@Component({
+  selector: 'app-task-item',
+  templateUrl: './task-item.component.html',
+  styleUrls: ['./task-item.component.css']
+})
+export class TaskItemComponent implements OnInit {
+  @Input() task: Task;
+
+  @Output() onDeleteTask: EventEmitter<Task> = new EventEmitter();
+
+  faTimes = faTimes;
+
+  constructor() { }
+
+  ngOnInit(): void {
+  }
+
+  onDelete(task) {
+    this.onDeleteTask.emit(task);
+  }
+}
+```
+
+Then we bind to that custom event and call a delete task function which also takes in that given task
+
+tasks component
+```html
+<app-task-item *ngFor="let task of tasks" [task]="task" (onDeleteTask)="deleteTask(task)">{{ task.text }}</app-task-item>
+```
+
+then we define the method on our service to delete from out db using an http observable.
+
+task service
+```ts
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable} from 'rxjs';
+
+import { Task } from '../Task';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TaskService {
+  private apiUrl = 'http://localhost:8080/tasks';
+
+  constructor(private http: HttpClient) { }
+
+  getTasks(): Observable<Task[]> {
+    return this.http.get<Task[]>(this.apiUrl)
+  }
+
+  deleteTask(task: Task): Observable<Task> {
+    const url = `${this.apiUrl}/${task.id}`;
+    return this.http.delete<Task>(url);
+  }
+}
+
+```
+
+And we wire them together with the deleteTask method on our component which takes in that task and uses the services observable, subscribes to it, which then deletes that task in the db and we can from that return a filtered array without that task to populate our tasks array to ensure that task is also deleted from the UI.
+
+tasks component
+```ts
+deleteTask(task: Task) {
+    this.taskService.deleteTask(task).subscribe(() => this.tasks = this.tasks.filter(t => t.id !== task.id));
+  }
+```
