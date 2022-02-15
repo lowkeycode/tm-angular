@@ -450,3 +450,5 @@ deleteTask(task: Task) {
     this.taskService.deleteTask(task).subscribe(() => this.tasks = this.tasks.filter(t => t.id !== task.id));
   }
 ```
+
+Instead of prop drilling like in react, in angular you can set up ui services and subjects which are a certain case of observable. Subjects take the notifications from a single source observable and forward them to one or more destination observers. (Kinda sounds like a context in rect...)
