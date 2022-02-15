@@ -272,3 +272,87 @@ export class TasksComponent implements OnInit {
 
 }
 ```
+
+
+To make it an observable we import the observable into the service. Then on our function we define that we want it to return an observable that we can later subscribe to. The course doesn't really explain the of() function...
+
+task service
+```ts
+import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
+
+import { Task } from '../Task';
+
+import { TASKS } from 'src/app/mock-tasks';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TaskService {
+
+  constructor() { }
+
+  getTasks(): Observable<Task[]> {
+    const tasks = of(TASKS);
+    return tasks;
+  }
+}
+```
+The we subscribe to the getTasks which is an observable and is sort of similar to a promise where we can handle the result.
+
+
+Currently this doesn't function any different then before but behind the scenes we know it is working differently.
+
+task component
+```ts
+import { Component, OnInit } from '@angular/core';
+import { TaskService } from 'src/app/services/task.service';
+import { Task } from '../../Task';
+
+@Component({
+  selector: 'app-tasks',
+  templateUrl: './tasks.component.html',
+  styleUrls: ['./tasks.component.css']
+})
+export class TasksComponent implements OnInit {
+  privateApiUrl = 'http://localhost:4300/tasks';
+
+  tasks: Task[] = [];
+
+  constructor(private taskService: TaskService) { }
+
+  ngOnInit(): void {
+    this.taskService.getTasks().subscribe((tasks) => this.tasks = tasks);
+  }
+
+}
+```
+
+Some methods like the angular http client will automatically return an observable so we don't always manually define them.
+
+Here we can get rid of the of() method as well as the mock tasks.
+
+Then our services get task observable makes an http call to our backend at the define url which is called when the component renders initially from the ngOnInit when we subscribe to it and set the tasks array to the data from the back end
+
+task service
+```ts
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable} from 'rxjs';
+
+import { Task } from '../Task';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TaskService {
+  private apiUrl = 'http://localhost:8080/tasks';
+
+  constructor(private http: HttpClient) { }
+
+  getTasks(): Observable<Task[]> {
+    return this.http.get<Task[]>(this.apiUrl)
+  }
+}
+```
